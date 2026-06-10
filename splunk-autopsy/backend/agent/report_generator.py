@@ -1,5 +1,6 @@
-import anthropic
+from groq import Groq
 import json
+import os
 
 
 SYSTEM_PROMPT = """You are a senior business analyst writing an executive post-mortem report.
@@ -23,17 +24,16 @@ The JSON must have exactly these fields:
 
 class ReportGenerator:
     def __init__(self):
-        self.client = anthropic.Anthropic()
+        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
     async def generate(self, question: str, causal_chain: list, timeline: list) -> dict:
         if not causal_chain:
-            return self._empty_report(question)
+            return self._empty_report()
 
-        message = self.client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1000,
-            system=SYSTEM_PROMPT,
+        message = self.client.chat.completions.create(
+            model="llama3-70b-8192",
             messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
                 {
                     "role": "user",
                     "content": f"""
@@ -48,20 +48,19 @@ Timeline:
 Write the Autopsy Report.
 """
                 }
-            ]
+            ],
+            max_tokens=1000
         )
 
-        raw = message.content[0].text.strip()
+        raw = message.choices[0].message.content.strip()
         try:
-            report = json.loads(raw)
+            return json.loads(raw)
         except json.JSONDecodeError:
-            report = self._empty_report(question)
+            return self._empty_report()
 
-        return report
-
-    def _empty_report(self, question: str) -> dict:
+    def _empty_report(self) -> dict:
         return {
-            "executive_summary": "Investigation complete. No significant anomalies detected in the specified time range.",
+            "executive_summary": "Investigation complete. No significant anomalies detected.",
             "root_cause": "No clear root cause identified",
             "estimated_impact": "Unknown",
             "timeline_narrative": "The investigation did not surface significant correlated events.",

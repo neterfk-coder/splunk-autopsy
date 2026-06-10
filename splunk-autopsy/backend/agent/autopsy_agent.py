@@ -1,8 +1,5 @@
-import anthropic
 import asyncio
 import uuid
-import json
-from typing import Optional
 
 from splunk.client import SplunkClient
 from agent.hypothesis_generator import HypothesisGenerator
@@ -12,7 +9,6 @@ from agent.report_generator import ReportGenerator
 
 class AutopsyAgent:
     def __init__(self):
-        self.client = anthropic.Anthropic()
         self.splunk = SplunkClient()
         self.hypothesis_gen = HypothesisGenerator()
         self.causal_scorer = CausalScorer()

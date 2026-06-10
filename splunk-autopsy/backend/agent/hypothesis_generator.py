@@ -1,9 +1,9 @@
-import anthropic
+from groq import Groq
 import json
 import os
 
 
-SYSTEM_PROMPT = """You are a business forensics expert. Given a business question about a failure or anomaly, 
+SYSTEM_PROMPT = """You are a business forensics expert. Given a business question about a failure or anomaly,
 generate a list of investigative hypotheses. Each hypothesis must include:
 - A plain English description of the potential cause
 - A specific SPL (Splunk Search Processing Language) query to test it
@@ -25,30 +25,30 @@ Example output:
 
 class HypothesisGenerator:
     def __init__(self):
-        self.client = anthropic.Anthropic()
+        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
     async def generate(self, question: str, time_range: str) -> list:
-        message = self.client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1000,
-            system=SYSTEM_PROMPT,
+        message = self.client.chat.completions.create(
+            model="llama3-70b-8192",
             messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
                 {
                     "role": "user",
                     "content": f"Business question: {question}\nTime range: {time_range}\n\nGenerate 4-6 investigative hypotheses with SPL queries."
                 }
-            ]
+            ],
+            max_tokens=1000
         )
 
-        raw = message.content[0].text.strip()
+        raw = message.choices[0].message.content.strip()
         try:
             hypotheses = json.loads(raw)
         except json.JSONDecodeError:
-            hypotheses = self._fallback_hypotheses(question)
+            hypotheses = self._fallback_hypotheses()
 
         return hypotheses
 
-    def _fallback_hypotheses(self, question: str) -> list:
+    def _fallback_hypotheses(self) -> list:
         return [
             {
                 "id": "h1",
