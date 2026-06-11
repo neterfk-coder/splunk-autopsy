@@ -24,14 +24,14 @@ export default function Dashboard({ onInvestigation, session }) {
 
   useEffect(() => {
     if (session?.user?.id) {
-      updateLastSeen(session.user.id);
+      updateLastSeen(session?.user?.id);
       loadHistory();
-      logActivity(session.user.id, "page_view", {}, "/");
+      logActivity(session?.user?.id, "page_view", {}, "/");
     }
   }, [session]);
 
   const loadHistory = async () => {
-    const data = await getInvestigations(session.user.id);
+    const data = await getInvestigations(session?.user?.id);
     setHistory(data);
   };
 
@@ -60,7 +60,7 @@ export default function Dashboard({ onInvestigation, session }) {
     try {
       // Log que el usuario hizo una investigación
       await logActivity(
-        session.user.id,
+        session?.user?.id,
         "investigation_started",
         { question },
         "/",
@@ -70,11 +70,11 @@ export default function Dashboard({ onInvestigation, session }) {
       clearInterval(interval);
 
       // Guardar investigación en Supabase
-      await saveInvestigation(session.user.id, question, result);
+      await saveInvestigation(session?.user?.id, question, result);
 
       // Log que la investigación terminó
       await logActivity(
-        session.user.id,
+        session?.user?.id,
         "investigation_completed",
         {
           question,
@@ -92,7 +92,7 @@ export default function Dashboard({ onInvestigation, session }) {
       clearInterval(interval);
       setError("Investigation failed. Check that the backend is running.");
       await logActivity(
-        session.user.id,
+        session?.user?.id,
         "investigation_failed",
         { question, error: err.message },
         "/",
@@ -105,7 +105,7 @@ export default function Dashboard({ onInvestigation, session }) {
 
   const handleSignOut = async () => {
     const { supabase } = await import("../lib/supabase");
-    await logActivity(session.user.id, "sign_out", {}, "/");
+    await logActivity(session?.user?.id, "sign_out", {}, "/");
     await supabase.auth.signOut();
     window.location.href = "/login";
   };
